@@ -56,6 +56,8 @@
                                     <include>*</include>
                                 </includes>
                             </artifactSet>
+                            <finalName>${project.artifactId}-${project.version}-shade</finalName>
+                            <outputDirectory>target/ranger-presto-plugin-impl</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

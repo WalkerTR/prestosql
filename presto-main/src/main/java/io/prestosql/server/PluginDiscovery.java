@@ -50,10 +50,6 @@ final class PluginDiscovery
     public static Set<String> discoverPlugins(Artifact artifact, ClassLoader classLoader)
             throws IOException
     {
-        if (!artifact.getExtension().equals("presto-plugin")) {
-            throw new RuntimeException("Unexpected extension for main artifact: " + artifact);
-        }
-
         File file = artifact.getFile();
         if (!file.getPath().endsWith("/target/classes")) {
             throw new RuntimeException("Unexpected file for main artifact: " + file);
