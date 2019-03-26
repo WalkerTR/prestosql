@@ -25,12 +25,12 @@ import java.security.Principal;
 import java.util.Optional;
 import java.util.Set;
 
-public class RangerSystemAccessControlImpl
+public class RangerSystemAccessControl
         implements SystemAccessControl
 {
     private RangerBasePlugin rangerPlugin;
 
-    public RangerSystemAccessControlImpl()
+    public RangerSystemAccessControl()
     {
         rangerPlugin = new RangerBasePlugin("presto", "presto");
         rangerPlugin.init();

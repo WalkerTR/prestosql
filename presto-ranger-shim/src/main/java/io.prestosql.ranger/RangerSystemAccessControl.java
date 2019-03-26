@@ -20,13 +20,7 @@ import io.prestosql.spi.security.AccessDeniedException;
 import io.prestosql.spi.security.Identity;
 import io.prestosql.spi.security.SystemAccessControl;
 import org.apache.ranger.plugin.classloader.RangerPluginClassLoader;
-import org.apache.ranger.plugin.classloader.RangerPluginClassLoaderUtil;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Optional;
 import java.util.Set;
@@ -35,30 +29,27 @@ public class RangerSystemAccessControl
         implements SystemAccessControl
 {
     private static final String RANGER_PLUGIN_TYPE = "presto";
-    private static final String RANGER_HDFS_AUTHORIZER_IMPL_CLASSNAME = "io.prestosql.ranger.RangerSystemAccessControlImpl";
+    private static final String RANGER_PRESTO_AUTHORIZER_IMPL_CLASSNAME = "io.prestosql.ranger.RangerSystemAccessControl";
 
     private static RangerPluginClassLoader rangerPluginClassLoader;
-    private SystemAccessControl rangerSystemAccessControlImpl;
+    private SystemAccessControl rangerSystemAccessControl;
 
     public RangerSystemAccessControl()
     {
-        try {
-            RangerPluginClassLoaderUtil clUtil = RangerPluginClassLoaderUtil.getInstance();
-            System.out.println("PLUGIN FILES");
-            URI uri = this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI();
-            Path path = Paths.get(URI.create(uri.toString()));
-            System.out.println(uri.toString());
-            System.out.println(path.getParent().toString() + File.separatorChar + "ranger-%-plugin-impl".replaceAll("%", RANGER_PLUGIN_TYPE));
-            for (URL url : clUtil.getPluginFilesForServiceTypeAndPluginclass(RANGER_PLUGIN_TYPE, this.getClass())) {
-                System.out.println(url.toString());
-            }
+        this.init();
+    }
 
+    private void init()
+    {
+        try {
             rangerPluginClassLoader = RangerPluginClassLoader.getInstance(RANGER_PLUGIN_TYPE, this.getClass());
-            Class<SystemAccessControl> cls = (Class<SystemAccessControl>) Class.forName(RANGER_HDFS_AUTHORIZER_IMPL_CLASSNAME, true, rangerPluginClassLoader);
+
+            @SuppressWarnings("unchecked")
+            Class<SystemAccessControl> cls = (Class<SystemAccessControl>) Class.forName(RANGER_PRESTO_AUTHORIZER_IMPL_CLASSNAME, true, rangerPluginClassLoader);
+
             activatePluginClassLoader();
-            System.out.println(Thread.currentThread().getContextClassLoader().toString());
-            rangerSystemAccessControlImpl = cls.newInstance();
-            System.out.println("YAAAYYYYYYYYYYYYY");
+
+            rangerSystemAccessControl = cls.newInstance();
         }
         catch (Exception e) {
             System.out.println("ERRORRRRRRRR");
@@ -75,7 +66,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanSetUser(principal, userName);
+            rangerSystemAccessControl.checkCanSetUser(principal, userName);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -92,7 +83,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanSetSystemSessionProperty(identity, propertyName);
+            rangerSystemAccessControl.checkCanSetSystemSessionProperty(identity, propertyName);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -109,7 +100,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanAccessCatalog(identity, catalogName);
+            rangerSystemAccessControl.checkCanAccessCatalog(identity, catalogName);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -132,7 +123,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanCreateSchema(identity, schema);
+            rangerSystemAccessControl.checkCanCreateSchema(identity, schema);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -149,7 +140,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanDropSchema(identity, schema);
+            rangerSystemAccessControl.checkCanDropSchema(identity, schema);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -166,7 +157,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanRenameSchema(identity, schema, newSchemaName);
+            rangerSystemAccessControl.checkCanRenameSchema(identity, schema, newSchemaName);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -183,7 +174,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanShowSchemas(identity, catalogName);
+            rangerSystemAccessControl.checkCanShowSchemas(identity, catalogName);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -206,7 +197,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanCreateTable(identity, table);
+            rangerSystemAccessControl.checkCanCreateTable(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -223,7 +214,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanDropTable(identity, table);
+            rangerSystemAccessControl.checkCanDropTable(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -240,7 +231,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanRenameTable(identity, table, newTable);
+            rangerSystemAccessControl.checkCanRenameTable(identity, table, newTable);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -257,7 +248,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanShowTablesMetadata(identity, schema);
+            rangerSystemAccessControl.checkCanShowTablesMetadata(identity, schema);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -280,7 +271,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanAddColumn(identity, table);
+            rangerSystemAccessControl.checkCanAddColumn(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -297,7 +288,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanDropColumn(identity, table);
+            rangerSystemAccessControl.checkCanDropColumn(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -314,7 +305,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanRenameColumn(identity, table);
+            rangerSystemAccessControl.checkCanRenameColumn(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -331,7 +322,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanSelectFromColumns(identity, table, columns);
+            rangerSystemAccessControl.checkCanSelectFromColumns(identity, table, columns);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -348,7 +339,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanInsertIntoTable(identity, table);
+            rangerSystemAccessControl.checkCanInsertIntoTable(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -365,7 +356,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanDeleteFromTable(identity, table);
+            rangerSystemAccessControl.checkCanDeleteFromTable(identity, table);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -382,7 +373,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanCreateView(identity, view);
+            rangerSystemAccessControl.checkCanCreateView(identity, view);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -399,7 +390,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanDropView(identity, view);
+            rangerSystemAccessControl.checkCanDropView(identity, view);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -416,7 +407,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanCreateViewWithSelectFromColumns(identity, table, columns);
+            rangerSystemAccessControl.checkCanCreateViewWithSelectFromColumns(identity, table, columns);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
@@ -433,7 +424,7 @@ public class RangerSystemAccessControl
     {
         try {
             activatePluginClassLoader();
-            rangerSystemAccessControlImpl.checkCanSetCatalogSessionProperty(identity, catalogName, propertyName);
+            rangerSystemAccessControl.checkCanSetCatalogSessionProperty(identity, catalogName, propertyName);
         }
         catch (AccessDeniedException e) {
             deactivatePluginClassLoader();
